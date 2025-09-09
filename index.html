@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#0f1115">
+  <title>Холст</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="container">
+      <p class="desktop-warning">Сайт рассчитан только на телефон. Откройте на мобильном устройстве для корректной работы.</p>
+      <h1 class="title">Рисование</h1>
+      <div class="canvas-wrap"><canvas id="canvas"></canvas></div>
+      <div class="controls">
+        <div class="row">
+          <span class="label">Толщина</span>
+          <input id="brush" class="slider" type="range" min="1" max="30" value="10">
+        </div>
+        <div class="row">
+          <span class="label">Имя</span>
+          <select id="label" class="select" aria-label="Имя рисунка"></select>
+        </div>
+        <div class="btns">
+          <button id="clearBtn">Очистить</button>
+          <button id="saveBtn">Сохранить</button>
+        </div>
+        <div class="note">
+          Сохранённые изображения вносятся в базу данных и хранятся под выбранным именем. Изображения преобразуются в нужный формат.
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
