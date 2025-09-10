@@ -5,8 +5,18 @@ from colorama import init, Style
 
 init()
 
-DATASET_FILE = 'dataset.csv'
+DATASET_FILE = '../dataset.csv'
 NAMES_FILE = 'settings.json'
+
+def remove_empty_images(file, thr=0.0):
+    import csv, numpy as np
+    with open(file) as f:
+        h, *d = csv.reader(f)
+    d = [r for r in d if not np.all(np.array(r[:-1], float) <= thr)]
+    with open(file, 'w', newline='') as f:
+        csv.writer(f).writerows([h] + d)
+
+remove_empty_images(DATASET_FILE)
 
 with open(NAMES_FILE, encoding='utf-8') as f:
     names_data = json.load(f)
@@ -21,10 +31,12 @@ with open(DATASET_FILE, newline='') as f:
     header = next(reader)
     data = list(reader)
 
+# 🔹 Выводим метки с количеством примеров
 labels = sorted(set(row[-1] for row in data))
 print("Доступные метки:")
 for lbl in labels:
-    print(f"- {lbl}")
+    count = sum(1 for row in data if row[-1] == lbl)
+    print(f"- {lbl} ({count})")
 
 choice = input("\nВведите имя метки: ").strip()
 
