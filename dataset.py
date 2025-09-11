@@ -5,7 +5,7 @@ from colorama import init, Style
 
 init()
 
-DATASET_FILE = 'dataset.csv'
+DATASET_FILE = 'upgrade/dataset.csv'
 NAMES_FILE = 'settings.json'
 
 def remove_empty_images(file, thr=0.0):
