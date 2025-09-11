@@ -1,5 +1,19 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const labelSel = document.getElementById('label');
+  const patternCountEl = document.getElementById('patternCount');
+
+  async function updateCount() {
+    const label = labelSel.value;
+    if (!label) return;
+    try {
+      const res = await fetch(`/count/${encodeURIComponent(label)}`);
+      const data = await res.json();
+      patternCountEl.textContent = `Сохранено: ${data.count}`;
+    } catch (err) {
+      console.error('Ошибка получения счётчика', err);
+    }
+  }
+
   try {
     const res = await fetch('settings.json');
     const data = await res.json();
@@ -10,10 +24,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         opt.textContent = l;
         labelSel.appendChild(opt);
       });
+      if (data.labels.length > 0) {
+        labelSel.value = data.labels[0];
+        updateCount();
+      }
     }
   } catch (e) {
-    console.error('Ошибка загрузки names.json', e);
+    console.error('Ошибка загрузки settings.json', e);
   }
+
+  labelSel.addEventListener('change', updateCount);
 
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -68,14 +88,13 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
     if (e.touches && e.touches.length > 0) {
-      const rect = canvas.getBoundingClientRect();
       return {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top
       };
     } else {
-      const rect = canvas.getBoundingClientRect();
       return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
@@ -128,6 +147,10 @@ document.addEventListener('DOMContentLoaded', async function () {
           const result = await res.json();
           if (result.status === 'ok') {
             statusEl.textContent = `Рисунок «${label}» успешно сохранён`;
+            updateCount();
+            if (typeof result.count === 'number') {
+              patternCountEl.textContent = `Сохранено: ${result.count}`;
+            }
             resizeCanvas();
             setTimeout(() => statusEl.textContent = '', 3000);
           } else {

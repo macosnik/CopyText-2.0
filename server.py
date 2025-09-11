@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from PIL import Image
 import csv, os, io, base64, re, json
 import numpy as np
+import threading, queue
 
 app = Flask(__name__)
 
@@ -11,6 +12,39 @@ SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 with open(SETTINGS_FILE, encoding='utf-8') as f:
     EXPORT_SIZE = int(json.load(f).get("size", 28))
 
+save_queue = queue.Queue()
+
+label_counts = {}
+
+if os.path.isfile(DATASET_FILE):
+    with open(DATASET_FILE, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            lbl = row['label']
+            label_counts[lbl] = label_counts.get(lbl, 0) + 1
+
+def save_worker():
+    while True:
+        data = save_queue.get()
+        if data is None:
+            break
+        try:
+            img = crop_and_resize(data_url_to_image(data['image']), EXPORT_SIZE)
+            arr = 1.0 - (np.array(img, dtype=np.float32) / 255.0)
+            row = [f"{v:.6f}" for v in arr.flatten()] + [data['label']]
+            file_exists = os.path.isfile(DATASET_FILE)
+            with open(DATASET_FILE, 'a', newline='') as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow([f'p{i}' for i in range(EXPORT_SIZE**2)] + ['label'])
+                writer.writerow(row)
+        except Exception as e:
+            print("Ошибка сохранения:", e)
+        finally:
+            save_queue.task_done()
+
+threading.Thread(target=save_worker, daemon=True).start()
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -18,6 +52,10 @@ def index():
 @app.route('/<path:filename>')
 def serve_file(filename):
     return send_from_directory('.', filename)
+
+@app.route('/count/<label>')
+def count_label(label):
+    return jsonify({'count': label_counts.get(label, 0)})
 
 def data_url_to_image(data_url: str) -> Image.Image:
     b64data = re.sub(r"^data:image/(png|jpeg);base64,", "", data_url)
@@ -42,16 +80,14 @@ def save():
     data = request.get_json()
     if not data.get('image') or data.get('label') is None:
         return jsonify({'status': 'error', 'message': 'invalid data'}), 400
-    img = crop_and_resize(data_url_to_image(data['image']), EXPORT_SIZE)
-    arr = 1.0 - (np.array(img, dtype=np.float32) / 255.0)
-    row = [f"{v:.6f}" for v in arr.flatten()] + [data['label']]
-    file_exists = os.path.isfile(DATASET_FILE)
-    with open(DATASET_FILE, 'a', newline='') as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow([f'p{i}' for i in range(EXPORT_SIZE**2)] + ['label'])
-        writer.writerow(row)
-    return jsonify({'status': 'ok'})
+
+    label = data['label']
+
+    label_counts[label] = label_counts.get(label, 0) + 1
+
+    save_queue.put(data)
+
+    return jsonify({'status': 'ok', 'count': label_counts[label]})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8050)

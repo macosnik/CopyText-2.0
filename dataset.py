@@ -5,7 +5,7 @@ from colorama import init, Style
 
 init()
 
-DATASET_FILE = '../dataset.csv'
+DATASET_FILE = 'dataset.csv'
 NAMES_FILE = 'settings.json'
 
 def remove_empty_images(file, thr=0.0):
@@ -31,7 +31,6 @@ with open(DATASET_FILE, newline='') as f:
     header = next(reader)
     data = list(reader)
 
-# 🔹 Выводим метки с количеством примеров
 labels = sorted(set(row[-1] for row in data))
 print("Доступные метки:")
 for lbl in labels:
