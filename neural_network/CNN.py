@@ -147,30 +147,48 @@ class Network:
             self.weights.append(w)
             self.biases.append(b)
 
-    def train(self, X_train, y_train, X_val, y_val, max_epochs, save_path):
+    def train(self, X_train, y_train, X_val, y_val, max_epochs, save_path, batch_size=64, shuffle=True):
         best_val_loss = float('inf')
         epochs_no_improve = 0
 
         start_time = time.time()
 
-        for epoch in range(1, max_epochs + 1):
-            self.train_step(X_train, y_train)
+        n_samples = X_train.shape[0]
 
+        for epoch in range(1, max_epochs + 1):
+            # Перемешиваем данные в начале каждой эпохи
+            if shuffle:
+                indices = np.arange(n_samples)
+                np.random.shuffle(indices)
+                X_train = X_train[indices]
+                y_train = y_train[indices]
+
+            # --- Обучение по батчам ---
+            for start_idx in range(0, n_samples, batch_size):
+                end_idx = start_idx + batch_size
+                X_batch = X_train[start_idx:end_idx]
+                y_batch = y_train[start_idx:end_idx]
+                self.train_step(X_batch, y_batch)
+
+            # --- Оценка после эпохи ---
             train_pred, _ = self.forward(X_train)
             val_pred, _ = self.forward(X_val)
 
             train_loss = self.cross_entropy_loss(train_pred[-1], y_train)
             val_loss = self.cross_entropy_loss(val_pred[-1], y_val)
 
-            print(f"\rEpoch {epoch:03d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | LR: {self.lr:.6f}", end="")
+            print(f"\rEpoch {epoch:03d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | LR: {self.lr:.6f}",
+                  end="")
 
-            if val_loss < best_val_loss - 1e-6:
+            # Сохраняем лучшую модель
+            if val_loss < best_val_loss - 1e-4:
                 best_val_loss = val_loss
                 epochs_no_improve = 0
                 self.save_model_csv(save_path)
             else:
                 epochs_no_improve += 1
 
+            # Early stopping / снижение LR
             if epochs_no_improve >= 5:
                 if self.lr > self.min_lr:
                     self.lr = max(self.lr / 10, self.min_lr)
@@ -180,6 +198,7 @@ class Network:
                     print("\n\n⛔ Early stopping: no improvement and min LR reached", end="")
                     break
 
+        # --- Итог ---
         end_time = time.time()
         elapsed = end_time - start_time
         hours = int(elapsed // 3600)
@@ -190,3 +209,4 @@ class Network:
         print(f"⏱ Время обучения: {hours}ч {minutes}м {seconds}с")
         print(f"Лучший val_loss: {best_val_loss:.4f}")
         print(f"Финальный LR: {self.lr:.6f}")
+
