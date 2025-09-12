@@ -5,8 +5,8 @@ from colorama import init, Style
 
 init()
 
-DATASET_FILE = 'dataset.csv'
-NAMES_FILE = 'settings.json'
+DATASET_FILE = '../dataset/dataset.csv'
+NAMES_FILE = '../drawing site/settings.json'
 
 def remove_empty_images(file, thr=0.0):
     import csv, numpy as np

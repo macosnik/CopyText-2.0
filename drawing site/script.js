@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   try {
-    const res = await fetch('settings.json');
+    const res = await fetch('drawing site/settings.json');
     const data = await res.json();
     if (Array.isArray(data.labels)) {
       data.labels.forEach((l) => {

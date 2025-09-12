@@ -9,7 +9,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("/dataset - получить датасет")
 
 async def send_dataset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    file_path = "dataset.csv"
+    file_path = "../dataset/dataset.csv"
     if os.path.exists(file_path):
         await update.message.reply_document(document=open(file_path, "rb"))
     else:

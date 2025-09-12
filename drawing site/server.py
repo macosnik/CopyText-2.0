@@ -6,8 +6,8 @@ import threading, queue
 
 app = Flask(__name__)
 
-DATASET_FILE = 'dataset.csv'
-SETTINGS_FILE = 'settings.json'
+DATASET_FILE = 'dataset/dataset.csv'
+SETTINGS_FILE = 'drawing site/settings.json'
 
 with open(SETTINGS_FILE) as f:
     EXPORT_SIZE = int(json.load(f).get("size"))
@@ -47,11 +47,11 @@ threading.Thread(target=save_worker, daemon=True).start()
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('..', 'drawing site/index.html')
 
 @app.route('/<path:filename>')
 def serve_file(filename):
-    return send_from_directory('.', filename)
+    return send_from_directory('..', filename)
 
 @app.route('/count/<label>')
 def count_label(label):
