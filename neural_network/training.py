@@ -1,5 +1,5 @@
-import csv
 import numpy as np
+import csv
 
 from CNN import Network
 
@@ -62,9 +62,8 @@ def train_cnn(csv_path, save_path, min_count, lr, max_epochs, val_ratio):
         learning_rate=lr
     )
 
-    model.train(X_train, y_train, X_val, y_val, max_epochs=max_epochs)
+    model.train(X_train, y_train, X_val, y_val, max_epochs, save_path)
     model.save_model_csv(save_path)
 
-
 if __name__ == "__main__":
-    train_cnn("../dataset/dataset.csv", "../models/model.csv", 1000, 0.01, 1000, 0.2)
+    train_cnn("../dataset/dataset.csv", "../models/model.csv", 100, 0.01, 1000, 0.2)

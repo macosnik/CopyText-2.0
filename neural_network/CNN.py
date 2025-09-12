@@ -147,7 +147,7 @@ class Network:
             self.weights.append(w)
             self.biases.append(b)
 
-    def train(self, X_train, y_train, X_val, y_val, max_epochs):
+    def train(self, X_train, y_train, X_val, y_val, max_epochs, save_path):
         best_val_loss = float('inf')
         epochs_no_improve = 0
 
@@ -167,7 +167,7 @@ class Network:
             if val_loss < best_val_loss - 1e-6:
                 best_val_loss = val_loss
                 epochs_no_improve = 0
-                self.save_model_csv("best_model.csv")
+                self.save_model_csv(save_path)
             else:
                 epochs_no_improve += 1
 
