@@ -2,7 +2,7 @@ import numpy as np
 import time
 import csv
 
-class SimpleCNN:
+class Network:
     def __init__(self, layers, learning_rate=0.01, min_lr=1e-5):
         self.layers = layers
         self.lr = learning_rate
@@ -87,19 +87,67 @@ class SimpleCNN:
     def save_model_csv(self, filename):
         with open(filename, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            # Заголовок
             writer.writerow(["layer", "type", "i", "j", "value"])
 
             for layer_idx, (w, b) in enumerate(zip(self.weights, self.biases)):
-                # Веса
                 for i in range(w.shape[0]):
                     for j in range(w.shape[1]):
                         writer.writerow([layer_idx, "W", i, j, w[i, j]])
-                # Смещения
+
                 for j in range(b.shape[1]):
                     writer.writerow([layer_idx, "B", 0, j, b[0, j]])
 
-    def train(self, X_train, y_train, X_val, y_val, max_epochs=100):
+    def load_model_csv(self, filename):
+        temp_weights = {}
+        temp_biases = {}
+
+        with open(filename, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                layer_idx = int(row["layer"])
+                typ = row["type"]
+                i = int(row["i"])
+                j = int(row["j"])
+                val = float(row["value"])
+
+                if typ == "W":
+                    if layer_idx not in temp_weights:
+                        temp_weights[layer_idx] = {}
+                    temp_weights[layer_idx][(i, j)] = val
+                elif typ == "B":
+                    if layer_idx not in temp_biases:
+                        temp_biases[layer_idx] = {}
+                    temp_biases[layer_idx][(i, j)] = val
+
+        layers = []
+        sorted_layers = sorted(temp_weights.keys())
+        for idx in sorted_layers:
+            rows = max(i for (i, _) in temp_weights[idx].keys()) + 1
+            cols = max(j for (_, j) in temp_weights[idx].keys()) + 1
+            if idx == 0:
+                layers.append(rows)
+            layers.append(cols)
+
+        self.layers = layers
+        self.weights = []
+        self.biases = []
+
+        for idx in sorted_layers:
+            rows = max(i for (i, _) in temp_weights[idx].keys()) + 1
+            cols = max(j for (_, j) in temp_weights[idx].keys()) + 1
+
+            w = np.zeros((rows, cols), dtype=np.float32)
+            for (i, j), val in temp_weights[idx].items():
+                w[i, j] = val
+
+            b = np.zeros((1, cols), dtype=np.float32)
+            for (i, j), val in temp_biases[idx].items():
+                b[i, j] = val
+
+            self.weights.append(w)
+            self.biases.append(b)
+
+    def train(self, X_train, y_train, X_val, y_val, max_epochs):
         best_val_loss = float('inf')
         epochs_no_improve = 0
 
@@ -114,23 +162,22 @@ class SimpleCNN:
             train_loss = self.cross_entropy_loss(train_pred[-1], y_train)
             val_loss = self.cross_entropy_loss(val_pred[-1], y_val)
 
-            print(f"Epoch {epoch:03d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | LR: {self.lr:.6f}")
+            print(f"\rEpoch {epoch:03d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | LR: {self.lr:.6f}", end="")
 
             if val_loss < best_val_loss - 1e-6:
                 best_val_loss = val_loss
                 epochs_no_improve = 0
                 self.save_model_csv("best_model.csv")
-                print(f"💾 Модель сохранена в CSV (val_loss={val_loss:.4f})")
             else:
                 epochs_no_improve += 1
 
             if epochs_no_improve >= 5:
                 if self.lr > self.min_lr:
                     self.lr = max(self.lr / 10, self.min_lr)
-                    print(f"⚠ Learning rate reduced to {self.lr}")
+                    print(f"\n\n⚠ Learning rate reduced to {self.lr}", end="")
                     epochs_no_improve = 0
                 else:
-                    print("⛔ Early stopping: no improvement and min LR reached")
+                    print("\n\n⛔ Early stopping: no improvement and min LR reached", end="")
                     break
 
         end_time = time.time()
@@ -139,7 +186,7 @@ class SimpleCNN:
         minutes = int((elapsed % 3600) // 60)
         seconds = int(elapsed % 60)
 
-        print("\n📊 Обучение завершено")
+        print("\n\n📊 Обучение завершено")
         print(f"⏱ Время обучения: {hours}ч {minutes}м {seconds}с")
         print(f"Лучший val_loss: {best_val_loss:.4f}")
         print(f"Финальный LR: {self.lr:.6f}")
