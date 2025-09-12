@@ -1,8 +1,9 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import os
+import os, json
 
-TOKEN = "7440547820:AAHnHF7owRRHn2yzeO80rfeP-4vtoXTj8ws"
+with open("token.json") as f:
+    TOKEN = json.load(f).get("token")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("/dataset - получить датасет")

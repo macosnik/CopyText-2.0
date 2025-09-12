@@ -7,10 +7,10 @@ import threading, queue
 app = Flask(__name__)
 
 DATASET_FILE = 'dataset.csv'
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
+SETTINGS_FILE = 'settings.json'
 
-with open(SETTINGS_FILE, encoding='utf-8') as f:
-    EXPORT_SIZE = int(json.load(f).get("size", 28))
+with open(SETTINGS_FILE) as f:
+    EXPORT_SIZE = int(json.load(f).get("size"))
 
 save_queue = queue.Queue()
 
@@ -31,7 +31,7 @@ def save_worker():
         try:
             img = crop_and_resize(data_url_to_image(data['image']), EXPORT_SIZE)
             arr = 1.0 - (np.array(img, dtype=np.float32) / 255.0)
-            row = [f"{v:.6f}" for v in arr.flatten()] + [data['label']]
+            row = [f"{v:.1f}" for v in arr.flatten()] + [data['label']]
             file_exists = os.path.isfile(DATASET_FILE)
             with open(DATASET_FILE, 'a', newline='') as f:
                 writer = csv.writer(f)
@@ -90,4 +90,4 @@ def save():
     return jsonify({'status': 'ok', 'count': label_counts[label]})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8050)
+    app.run(host='0.0.0.0', port=1488)
